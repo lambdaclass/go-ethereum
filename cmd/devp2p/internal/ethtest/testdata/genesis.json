@@ -17,14 +17,14 @@
     "mergeNetsplitBlock": 0,
     "shanghaiTime": 0,
     "cancunTime": 0,
-    "terminalTotalDifficulty": 9454784,
+    "terminalTotalDifficulty": 131072,
     "ethash": {}
   },
   "nonce": "0x0",
   "timestamp": "0x0",
-  "extraData": "0x68697665636861696e",
-  "gasLimit": "0x23f3e20",
-  "difficulty": "0x20000",
+  "extraData": "0x00",
+  "gasLimit": "0x16345785d8a0000",
+  "difficulty": "0x0",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
   "alloc": {
