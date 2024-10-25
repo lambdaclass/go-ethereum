@@ -179,7 +179,7 @@ The server should return the first available account.`,
 			limitHash:    ffHash,
 			expAccounts:  68,
 			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x445cb5c1278fdce2f9cbdb681bdd76c52f8e50e41dbd9e220242a69ba99ac099"),
+			expLast:      common.HexToHash("0x5ec55391e89ac4c3cf9e61801cd13609e8757ab6ed08687237b789f666ea781b"),
 			desc: `In this test, startingHash is exactly the first available account key.
 The server should return the first available account of the state as the first item.`,
 		},
@@ -190,7 +190,7 @@ The server should return the first available account of the state as the first i
 			limitHash:    ffHash,
 			expAccounts:  68,
 			expFirst:     secondKey,
-			expLast:      common.HexToHash("0x4615e5f5df5b25349a00ad313c6cd0436b6c08ee5826e33a018661997f85ebaa"),
+			expLast:      common.HexToHash("0x600a7a5f41a67f6f759dcb664198f1c5d9b657fb51a870ce9e234e686dff008e"),
 			desc: `In this test, startingHash is after the first available key.
 The server should return the second account of the state as the first item.`,
 		},
