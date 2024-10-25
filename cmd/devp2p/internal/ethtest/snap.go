@@ -657,8 +657,8 @@ The server should reject the request.`,
 				// It's a bit unfortunate these are hard-coded, but the result depends on
 				// a lot of aspects of the state trie and can't be guessed in a simple
 				// way. So you'll have to update this when the test chain is changed.
-				common.HexToHash("0x3e963a69401a70224cbfb8c0cc2249b019041a538675d71ccf80c9328d114e2e"),
-				common.HexToHash("0xd0670d09cdfbf3c6320eb3e92c47c57baa6c226551a2d488c05581091e6b1689"),
+				common.HexToHash("0x9fabd3be3ae860943aa4dd313563db2e42878c97d1129e6a1d107a006f5400ae"),
+				common.HexToHash("0x54cde0da8292c98e169e02ea4aa0696934506230fe84cb7fb37340d71941636e"),
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
@@ -678,8 +678,8 @@ The server should reject the request.`,
 			// be updated when the test chain is changed.
 			expHashes: []common.Hash{
 				empty,
-				common.HexToHash("0xd0670d09cdfbf3c6320eb3e92c47c57baa6c226551a2d488c05581091e6b1689"),
-				common.HexToHash("0x3e963a69401a70224cbfb8c0cc2249b019041a538675d71ccf80c9328d114e2e"),
+				common.HexToHash("0x54cde0da8292c98e169e02ea4aa0696934506230fe84cb7fb37340d71941636e"),
+				common.HexToHash("0x9fabd3be3ae860943aa4dd313563db2e42878c97d1129e6a1d107a006f5400ae"),
 			},
 		},
 
