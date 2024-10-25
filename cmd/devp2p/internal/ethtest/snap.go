@@ -98,7 +98,7 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 			limitHash:    ffHash,
 			expAccounts:  51,
 			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x2e6fe1362b3e388184fd7bf08e99e74170b26361624ffd1c5f646da7067b58b6"),
+			expLast:      common.HexToHash("0x4fbc5fc8df4f0a578c3be3549f1cb3ef135cbcdf75f620c7a1d412462e9b3b94"),
 			desc:         "In this test, we request the entire state range, but limit the response to 3000 bytes.",
 		},
 		{
@@ -108,7 +108,7 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 			limitHash:    ffHash,
 			expAccounts:  35,
 			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x1c3f74249a4892081ba0634a819aec9ed25f34c7653f5719b9098487e65ab595"),
+			expLast:      common.HexToHash("0x3960cb77ee8ce76e0a84773c1d222795fba838aa28edcca2045779467ef3fa27"),
 			desc:         "In this test, we request the entire state range, but limit the response to 2000 bytes.",
 		},
 		{
@@ -228,7 +228,7 @@ server to return no data because genesis is older than 127 blocks.`,
 			limitHash:    ffHash,
 			expAccounts:  68,
 			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x580aa878e2f92d113a12c0a3ce3c21972b03dbe80786858d49a72097e2c491a3"),
+			expLast:      common.HexToHash("0x86d03d0f6bed220d046a4712ec4f451583b276df1aed33f96495d22569dc3485"),
 			desc: `This test requests data at a state root that is 127 blocks old.
 We expect the server to have this state available.`,
 		},
