@@ -187,6 +187,8 @@ func (c *Conn) ReadSnap() (any, error) {
 	c.SetReadDeadline(time.Now().Add(timeout))
 	for {
 		code, data, _, err := c.Conn.Read()
+		fmt.Printf("code: %v\n", code)
+		fmt.Printf("data: %v\n", data)
 		if err != nil {
 			return nil, err
 		}
