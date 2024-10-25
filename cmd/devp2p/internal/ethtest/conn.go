@@ -190,6 +190,7 @@ func (c *Conn) ReadSnap() (any, error) {
 		fmt.Printf("code: %v\n", code)
 		fmt.Printf("data: %v\n", data)
 		if err != nil {
+			fmt.Printf("err: %v\n", err)
 			return nil, err
 		}
 		if getProto(code) != snapProto {
