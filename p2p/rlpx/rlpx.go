@@ -154,6 +154,7 @@ func (c *Conn) Read() (code uint64, data []byte, wireSize int, err error) {
 		}
 		c.snappyReadBuffer = growslice(c.snappyReadBuffer, actualSize)
 		data, err = snappy.Decode(c.snappyReadBuffer, data)
+		fmt.Printf("data: %v\n", data)
 	}
 	return code, data, wireSize, err
 }
