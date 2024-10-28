@@ -485,6 +485,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 	if len(keys) != len(values) {
 		return false, fmt.Errorf("inconsistent proof data, keys: %d, values: %d", len(keys), len(values))
 	}
+	fmt.Printf("\"CheckPoint -3\": %v\n", "CheckPoint -3")
 	// Ensure the received batch is monotonic increasing and contains no deletions
 	for i := 0; i < len(keys)-1; i++ {
 		if bytes.Compare(keys[i], keys[i+1]) >= 0 {
@@ -496,6 +497,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 			return false, errors.New("range contains deletion")
 		}
 	}
+	fmt.Printf("\"CheckPoint -2\": %v\n", "CheckPoint -2")
 	// Special case, there is no edge proof at all. The given range is expected
 	// to be the whole leaf-set in the trie.
 	if proof == nil {
@@ -508,6 +510,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 		}
 		return false, nil // No more elements
 	}
+	fmt.Printf("\"CheckPoint -1\": %v\n", "CheckPoint -1")
 	// Special case, there is a provided edge proof but zero key/value
 	// pairs, ensure there are no more accounts / slots in the trie.
 	if len(keys) == 0 {
