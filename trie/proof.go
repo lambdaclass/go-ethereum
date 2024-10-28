@@ -521,6 +521,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 		return false, nil
 	}
 	var lastKey = keys[len(keys)-1]
+	fmt.Printf("\"CheckPoint 0\": %v\n", "CheckPoint 0")
 	// Special case, there is only one element and two edge keys are same.
 	// In this case, we can't construct two edge paths. So handle it here.
 	if len(keys) == 1 && bytes.Equal(firstKey, lastKey) {
@@ -545,6 +546,8 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 	if len(firstKey) != len(lastKey) {
 		return false, errors.New("inconsistent edge keys")
 	}
+
+	fmt.Printf("\"CheckPoint 1\": %v\n", "CheckPoint 1")
 	// Convert the edge proofs to edge trie paths. Then we can
 	// have the same tree architecture with the original one.
 	// For the first edge proof, non-existent proof is allowed.
@@ -552,6 +555,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 	if err != nil {
 		return false, err
 	}
+	fmt.Printf("\"CheckPoint 2\": %v\n", "CheckPoint 2")
 	// Pass the root node here, the second path will be merged
 	// with the first one. For the last edge proof, non-existent
 	// proof is also allowed.
@@ -559,6 +563,7 @@ func VerifyRangeProof(rootHash common.Hash, firstKey []byte, keys [][]byte, valu
 	if err != nil {
 		return false, err
 	}
+	fmt.Printf("\"CheckPoint 3\": %v\n", "CheckPoint 3")
 	// Remove all internal references. All the removed parts should
 	// be re-filled(or re-constructed) by the given leaves range.
 	empty, err := unsetInternal(root, firstKey, lastKey)
