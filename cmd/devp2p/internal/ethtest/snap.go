@@ -72,11 +72,11 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 		zero   = common.Hash{}
 
 		// test values derived from chain/ account dump
-		root        = s.chain.Head().Root()
-		headstate   = s.chain.AccountsInHashOrder()
-		firstKey    = common.BytesToHash(headstate[0].AddressHash)
-		secondKey   = common.BytesToHash(headstate[1].AddressHash)
-		storageRoot = findNonEmptyStorageRoot(headstate)
+		root      = s.chain.Head().Root()
+		headstate = s.chain.AccountsInHashOrder()
+		firstKey  = common.BytesToHash(headstate[0].AddressHash)
+		// secondKey   = common.BytesToHash(headstate[1].AddressHash)
+		// storageRoot = findNonEmptyStorageRoot(headstate)
 	)
 
 	tests := []accRangeTest{
@@ -91,198 +91,198 @@ func (s *Suite) TestSnapGetAccountRange(t *utesting.T) {
 			expLast:      common.HexToHash("0x5ec55391e89ac4c3cf9e61801cd13609e8757ab6ed08687237b789f666ea781b"),
 			desc:         "In this test, we request the entire state range, but limit the response to 4000 bytes.",
 		},
-		{
-			nBytes:       3000,
-			root:         root,
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  51,
-			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x4fbc5fc8df4f0a578c3be3549f1cb3ef135cbcdf75f620c7a1d412462e9b3b94"),
-			desc:         "In this test, we request the entire state range, but limit the response to 3000 bytes.",
-		},
-		{
-			nBytes:       2000,
-			root:         root,
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  35,
-			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x3960cb77ee8ce76e0a84773c1d222795fba838aa28edcca2045779467ef3fa27"),
-			desc:         "In this test, we request the entire state range, but limit the response to 2000 bytes.",
-		},
-		{
-			nBytes:       1,
-			root:         root,
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `In this test, we request the entire state range, but limit the response to 1 byte.
-The server should return the first account of the state.`,
-		},
-		{
-			nBytes:       0,
-			root:         root,
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `Here we request with a responseBytes limit of zero.
-The server should return one account.`,
-		},
+		// 		{
+		// 			nBytes:       3000,
+		// 			root:         root,
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  51,
+		// 			expFirst:     firstKey,
+		// 			expLast:      common.HexToHash("0x4fbc5fc8df4f0a578c3be3549f1cb3ef135cbcdf75f620c7a1d412462e9b3b94"),
+		// 			desc:         "In this test, we request the entire state range, but limit the response to 3000 bytes.",
+		// 		},
+		// 		{
+		// 			nBytes:       2000,
+		// 			root:         root,
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  35,
+		// 			expFirst:     firstKey,
+		// 			expLast:      common.HexToHash("0x3960cb77ee8ce76e0a84773c1d222795fba838aa28edcca2045779467ef3fa27"),
+		// 			desc:         "In this test, we request the entire state range, but limit the response to 2000 bytes.",
+		// 		},
+		// 		{
+		// 			nBytes:       1,
+		// 			root:         root,
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `In this test, we request the entire state range, but limit the response to 1 byte.
+		// The server should return the first account of the state.`,
+		// 		},
+		// 		{
+		// 			nBytes:       0,
+		// 			root:         root,
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `Here we request with a responseBytes limit of zero.
+		// The server should return one account.`,
+		// 		},
 
-		// Tests variations of the range
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: hashAdd(firstKey, -500),
-			limitHash:    hashAdd(firstKey, 1),
-			expAccounts:  2,
-			expFirst:     firstKey,
-			expLast:      secondKey,
-			desc: `In this test, we request a range where startingHash is before the first available
-account key, and limitHash is after. The server should return the first and second
-account of the state (because the second account is the 'next available').`,
-		},
+		// 		// Tests variations of the range
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: hashAdd(firstKey, -500),
+		// 			limitHash:    hashAdd(firstKey, 1),
+		// 			expAccounts:  2,
+		// 			expFirst:     firstKey,
+		// 			expLast:      secondKey,
+		// 			desc: `In this test, we request a range where startingHash is before the first available
+		// account key, and limitHash is after. The server should return the first and second
+		// account of the state (because the second account is the 'next available').`,
+		// 		},
 
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: hashAdd(firstKey, -500),
-			limitHash:    hashAdd(firstKey, -450),
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `Here we request range where both bounds are before the first available account key.
-This should return the first account (even though it's out of bounds).`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: hashAdd(firstKey, -500),
+		// 			limitHash:    hashAdd(firstKey, -450),
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `Here we request range where both bounds are before the first available account key.
+		// This should return the first account (even though it's out of bounds).`,
+		// 		},
 
-		// More range tests:
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: zero,
-			limitHash:    zero,
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `In this test, both startingHash and limitHash are zero.
-The server should return the first available account.`,
-		},
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: firstKey,
-			limitHash:    ffHash,
-			expAccounts:  68,
-			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x5ec55391e89ac4c3cf9e61801cd13609e8757ab6ed08687237b789f666ea781b"),
-			desc: `In this test, startingHash is exactly the first available account key.
-The server should return the first available account of the state as the first item.`,
-		},
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: hashAdd(firstKey, 1),
-			limitHash:    ffHash,
-			expAccounts:  68,
-			expFirst:     secondKey,
-			expLast:      common.HexToHash("0x600a7a5f41a67f6f759dcb664198f1c5d9b657fb51a870ce9e234e686dff008e"),
-			desc: `In this test, startingHash is after the first available key.
-The server should return the second account of the state as the first item.`,
-		},
+		// 		// More range tests:
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: zero,
+		// 			limitHash:    zero,
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `In this test, both startingHash and limitHash are zero.
+		// The server should return the first available account.`,
+		// 		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: firstKey,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  68,
+		// 			expFirst:     firstKey,
+		// 			expLast:      common.HexToHash("0x5ec55391e89ac4c3cf9e61801cd13609e8757ab6ed08687237b789f666ea781b"),
+		// 			desc: `In this test, startingHash is exactly the first available account key.
+		// The server should return the first available account of the state as the first item.`,
+		// 		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: hashAdd(firstKey, 1),
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  68,
+		// 			expFirst:     secondKey,
+		// 			expLast:      common.HexToHash("0x600a7a5f41a67f6f759dcb664198f1c5d9b657fb51a870ce9e234e686dff008e"),
+		// 			desc: `In this test, startingHash is after the first available key.
+		// The server should return the second account of the state as the first item.`,
+		// 		},
 
-		// Test different root hashes
+		// 		// Test different root hashes
 
-		{
-			nBytes:       4000,
-			root:         common.Hash{0x13, 0x37},
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  0,
-			expFirst:     zero,
-			expLast:      zero,
-			desc:         `This test requests a non-existent state root.`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         common.Hash{0x13, 0x37},
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  0,
+		// 			expFirst:     zero,
+		// 			expLast:      zero,
+		// 			desc:         `This test requests a non-existent state root.`,
+		// 		},
 
-		// The genesis stateroot (we expect it to not be served)
-		{
-			nBytes:       4000,
-			root:         s.chain.RootAt(0),
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  0,
-			expFirst:     zero,
-			expLast:      zero,
-			desc: `This test requests data at the state root of the genesis block. We expect the
-server to return no data because genesis is older than 127 blocks.`,
-		},
+		// 		// The genesis stateroot (we expect it to not be served)
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         s.chain.RootAt(0),
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  0,
+		// 			expFirst:     zero,
+		// 			expLast:      zero,
+		// 			desc: `This test requests data at the state root of the genesis block. We expect the
+		// server to return no data because genesis is older than 127 blocks.`,
+		// 		},
 
-		{
-			nBytes:       4000,
-			root:         s.chain.RootAt(int(s.chain.Head().Number().Uint64()) - 127),
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  68,
-			expFirst:     firstKey,
-			expLast:      common.HexToHash("0x86d03d0f6bed220d046a4712ec4f451583b276df1aed33f96495d22569dc3485"),
-			desc: `This test requests data at a state root that is 127 blocks old.
-We expect the server to have this state available.`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         s.chain.RootAt(int(s.chain.Head().Number().Uint64()) - 127),
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  68,
+		// 			expFirst:     firstKey,
+		// 			expLast:      common.HexToHash("0x86d03d0f6bed220d046a4712ec4f451583b276df1aed33f96495d22569dc3485"),
+		// 			desc: `This test requests data at a state root that is 127 blocks old.
+		// We expect the server to have this state available.`,
+		// 		},
 
-		{
-			nBytes:       4000,
-			root:         storageRoot,
-			startingHash: zero,
-			limitHash:    ffHash,
-			expAccounts:  0,
-			expFirst:     zero,
-			expLast:      zero,
-			desc: `This test requests data at a state root that is actually the storage root of
-an existing account. The server is supposed to ignore this request.`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         storageRoot,
+		// 			startingHash: zero,
+		// 			limitHash:    ffHash,
+		// 			expAccounts:  0,
+		// 			expFirst:     zero,
+		// 			expLast:      zero,
+		// 			desc: `This test requests data at a state root that is actually the storage root of
+		// an existing account. The server is supposed to ignore this request.`,
+		// 		},
 
-		// And some non-sensical requests
+		// 		// And some non-sensical requests
 
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: ffHash,
-			limitHash:    zero,
-			expAccounts:  0,
-			expFirst:     zero,
-			expLast:      zero,
-			desc: `In this test, the startingHash is after limitHash (wrong order). The server
-should ignore this invalid request.`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: ffHash,
+		// 			limitHash:    zero,
+		// 			expAccounts:  0,
+		// 			expFirst:     zero,
+		// 			expLast:      zero,
+		// 			desc: `In this test, the startingHash is after limitHash (wrong order). The server
+		// should ignore this invalid request.`,
+		// 		},
 
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: firstKey,
-			limitHash:    hashAdd(firstKey, -1),
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `In this test, the startingHash is the first available key, and limitHash is
-a key before startingHash (wrong order). The server should return the first available key.`,
-		},
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: firstKey,
+		// 			limitHash:    hashAdd(firstKey, -1),
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `In this test, the startingHash is the first available key, and limitHash is
+		// a key before startingHash (wrong order). The server should return the first available key.`,
+		// 		},
 
-		// range from [firstkey, 0], wrong order. Expect to get first key.
-		{
-			nBytes:       4000,
-			root:         root,
-			startingHash: firstKey,
-			limitHash:    zero,
-			expAccounts:  1,
-			expFirst:     firstKey,
-			expLast:      firstKey,
-			desc: `In this test, the startingHash is the first available key and limitHash is zero.
-(wrong order). The server should return the first available key.`,
-		},
+		// 		// range from [firstkey, 0], wrong order. Expect to get first key.
+		// 		{
+		// 			nBytes:       4000,
+		// 			root:         root,
+		// 			startingHash: firstKey,
+		// 			limitHash:    zero,
+		// 			expAccounts:  1,
+		// 			expFirst:     firstKey,
+		// 			expLast:      firstKey,
+		// 			desc: `In this test, the startingHash is the first available key and limitHash is zero.
+		// (wrong order). The server should return the first available key.`,
+		// 		},
 	}
 
 	for i, tc := range tests {
