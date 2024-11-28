@@ -345,10 +345,12 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 		t.Fatalf("dial failed: %v", err)
 	}
 	defer conn.Close()
+	t.Log("BEFORE CONN PEER")
 	if err := conn.peer(s.chain, nil); err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	// Create block receipts request.
+	t.Log("BEFORE INSTANTIATING REQUEST")
 	req := &eth.GetReceiptsPacket{
 		RequestId: 100,
 		GetReceiptsRequest: eth.GetReceiptsRequest{
@@ -356,14 +358,17 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 			s.chain.blocks[44].Hash(),
 		},
 	}
+	t.Log("BEFORE WRITING TO CONN")
 	if err := conn.Write(ethProto, eth.GetReceiptsMsg, req); err != nil {
 		t.Fatalf("could not write to connection: %v", err)
 	}
 	// Wait for response.
+	t.Log("BEFORE WAITING RESPONSE")
 	resp := new(eth.GetReceiptsPacket)
 	if err := conn.ReadMsg(ethProto, eth.GetReceiptsMsg, &resp); err != nil {
 		t.Fatalf("error reading block bodies msg: %v", err)
 	}
+	t.Log("BEFORE CHECKING")
 	if got, want := resp.RequestId, req.RequestId; got != want {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
