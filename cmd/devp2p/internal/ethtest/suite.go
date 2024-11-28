@@ -72,6 +72,8 @@ func (s *Suite) EthTests() []utesting.Test {
 		{Name: "ZeroRequestID", Fn: s.TestZeroRequestID},
 		// get block bodies
 		{Name: "GetBlockBodies", Fn: s.TestGetBlockBodies},
+		// get block receipts
+		{Name: "GetBlockReceipts", Fn: s.TestGetBlockReceipts},
 		// // malicious handshakes + status
 		{Name: "MaliciousHandshake", Fn: s.TestMaliciousHandshake},
 		{Name: "MaliciousStatus", Fn: s.TestMaliciousStatus},
@@ -337,6 +339,42 @@ and expects a response.`)
 
 func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 	t.Log(`This test sends GetBlockBodies requests to the node for known blocks in the test chain.`)
+
+	conn, err := s.dial()
+	if err != nil {
+		t.Fatalf("dial failed: %v", err)
+	}
+	defer conn.Close()
+	if err := conn.peer(s.chain, nil); err != nil {
+		t.Fatalf("peering failed: %v", err)
+	}
+	// Create block receipts request.
+	req := &eth.GetReceiptsPacket{
+		RequestId: 100,
+		GetReceiptsRequest: eth.GetReceiptsRequest{
+			s.chain.blocks[30].Hash(),
+			s.chain.blocks[44].Hash(),
+		},
+	}
+	if err := conn.Write(ethProto, eth.GetReceiptsMsg, req); err != nil {
+		t.Fatalf("could not write to connection: %v", err)
+	}
+	// Wait for response.
+	resp := new(eth.GetReceiptsPacket)
+	if err := conn.ReadMsg(ethProto, eth.GetReceiptsMsg, &resp); err != nil {
+		t.Fatalf("error reading block bodies msg: %v", err)
+	}
+	if got, want := resp.RequestId, req.RequestId; got != want {
+		t.Fatalf("unexpected request id in respond", got, want)
+	}
+	receipts := resp.GetReceiptsRequest
+	if len(receipts) != len(req.GetReceiptsRequest) {
+		t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), len(receipts))
+	}
+}
+
+func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
+	t.Log(`This test sends block receipts requests to the node for known blocks in the test chain.`)
 
 	conn, err := s.dial()
 	if err != nil {
