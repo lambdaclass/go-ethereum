@@ -18,6 +18,7 @@ package ethtest
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"reflect"
 
@@ -410,6 +411,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
 	bodies := resp.BlockBodiesResponse
+	t.Log(fmt.Sprintf("%v", bodies))
 	if len(bodies) != len(req.GetBlockBodiesRequest) {
 		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetBlockBodiesRequest), len(bodies))
 	}
