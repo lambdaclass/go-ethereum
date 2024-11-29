@@ -411,7 +411,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	if got, want := resp.RequestId, req.RequestId; got != want {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
-	bodies := resp.GetReceiptsRequest
+	bodies := resp.ReceiptsResponse
 	t.Log(fmt.Sprintf("%+v", bodies))
 	if len(bodies) != len(req.GetReceiptsRequest) {
 		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(bodies))
