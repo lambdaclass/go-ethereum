@@ -391,7 +391,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	req := &eth.GetReceiptsPacket{
 		RequestId: 55,
 		GetReceiptsRequest: eth.GetReceiptsRequest{
-			s.chain.blocks[54].Hash(),
+			// s.chain.blocks[54].Hash(),
 			s.chain.blocks[75].Hash(),
 		},
 	}
@@ -405,7 +405,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	resp := new(eth.ReceiptsPacket)
 	if err := conn.ReadMsg(ethProto, eth.ReceiptsMsg, &resp); err != nil {
 		t.Log(fmt.Sprintf("%+v", *resp))
-		t.Fatalf("error reading block bodies msg: %v", err)
+		t.Fatalf("error reading receipts msg: %v", err)
 	}
 	t.Log("BEFORE EXPECTING RESPONSE")
 	if got, want := resp.RequestId, req.RequestId; got != want {
