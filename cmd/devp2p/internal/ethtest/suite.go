@@ -388,22 +388,22 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	}
 	// Create block bodies request.
 	t.Log("BEFORE BUILDING REQUEST")
-	req := &eth.GetBlockBodiesPacket{
+	req := &eth.GetReceiptsPacket{
 		RequestId: 55,
-		GetBlockBodiesRequest: eth.GetBlockBodiesRequest{
+		GetReceiptsRequest: eth.GetReceiptsRequest{
 			s.chain.blocks[54].Hash(),
 			s.chain.blocks[75].Hash(),
 		},
 	}
 
 	t.Log("BEFORE BUILDING REQUEST")
-	if err := conn.Write(ethProto, eth.GetBlockBodiesMsg, req); err != nil {
+	if err := conn.Write(ethProto, eth.GetReceiptsMsg, req); err != nil {
 		t.Fatalf("could not write to connection: %v", err)
 	}
 	// Wait for response.
 	t.Log("BEFORE BUILDING REQUEST")
 	resp := new(eth.BlockBodiesPacket)
-	if err := conn.ReadMsg(ethProto, eth.BlockBodiesMsg, &resp); err != nil {
+	if err := conn.ReadMsg(ethProto, eth.GetReceiptsMsg, &resp); err != nil {
 		t.Fatalf("error reading block bodies msg: %v", err)
 	}
 	t.Log("BEFORE EXPECTING RESPONSE")
@@ -412,8 +412,8 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	}
 	bodies := resp.BlockBodiesResponse
 	t.Log(fmt.Sprintf("%+v", bodies))
-	if len(bodies) != len(req.GetBlockBodiesRequest) {
-		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetBlockBodiesRequest), len(bodies))
+	if len(bodies) != len(req.GetReceiptsRequest) {
+		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(bodies))
 	}
 }
 
