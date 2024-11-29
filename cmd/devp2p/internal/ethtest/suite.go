@@ -404,6 +404,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	t.Log("BEFORE BUILDING REQUEST")
 	resp := new(eth.GetReceiptsPacket)
 	if err := conn.ReadMsg(ethProto, eth.GetReceiptsMsg, &resp); err != nil {
+		t.Log(fmt.Sprintf("%+v", *resp))
 		t.Fatalf("error reading block bodies msg: %v", err)
 	}
 	t.Log("BEFORE EXPECTING RESPONSE")
