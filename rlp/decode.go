@@ -90,6 +90,7 @@ func Decode(r io.Reader, val interface{}) error {
 // DecodeBytes parses RLP data from b into val. Please see package-level documentation for
 // the decoding rules. The input must contain exactly one value and no trailing data.
 func DecodeBytes(b []byte, val interface{}) error {
+	fmt.Printf("DECODED BYTES: %v\n", b)
 	r := (*sliceReader)(&b)
 
 	stream := streamPool.Get().(*Stream)
