@@ -418,7 +418,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 		}
 	}
 	if len(receipts) != len(req.GetReceiptsRequest) {
-		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(bodies))
+		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(receipts))
 	}
 }
 
