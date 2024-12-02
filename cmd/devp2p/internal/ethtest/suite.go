@@ -391,7 +391,7 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	req := &eth.GetReceiptsPacket{
 		RequestId: 55,
 		GetReceiptsRequest: eth.GetReceiptsRequest{
-			// s.chain.blocks[54].Hash(),
+			s.chain.blocks[54].Hash(),
 			s.chain.blocks[75].Hash(),
 		},
 	}
@@ -412,7 +412,9 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
 	bodies := resp.ReceiptsResponse
-	t.Log(fmt.Sprintf("%+v", bodies))
+	for _, body := range bodies {
+		t.Log(fmt.Sprintf("%+v", body))
+	}
 	if len(bodies) != len(req.GetReceiptsRequest) {
 		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(bodies))
 	}
