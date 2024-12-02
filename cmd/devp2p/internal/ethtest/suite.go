@@ -413,7 +413,9 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	}
 	bodies := resp.ReceiptsResponse
 	for _, body := range bodies {
-		t.Log(fmt.Sprintf("%+v", body))
+		for _, a := range body {
+			t.Log(fmt.Sprintf("%+v", a))
+		}
 	}
 	if len(bodies) != len(req.GetReceiptsRequest) {
 		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(bodies))
