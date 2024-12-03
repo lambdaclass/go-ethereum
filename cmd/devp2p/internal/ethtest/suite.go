@@ -391,8 +391,8 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	req := &eth.GetReceiptsPacket{
 		RequestId: 55,
 		GetReceiptsRequest: eth.GetReceiptsRequest{
-			// s.chain.blocks[54].Hash(),
-			s.chain.blocks[75].Hash(),
+			s.chain.blocks[54].Hash(),
+			// s.chain.blocks[75].Hash(),
 		},
 	}
 
