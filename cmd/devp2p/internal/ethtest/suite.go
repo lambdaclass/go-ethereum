@@ -348,28 +348,28 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 	if err := conn.peer(s.chain, nil); err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
-	// Create block receipts request.
-	req := &eth.GetReceiptsPacket{
-		RequestId: 100,
-		GetReceiptsRequest: eth.GetReceiptsRequest{
-			s.chain.blocks[30].Hash(),
-			s.chain.blocks[44].Hash(),
+	// Create block bodies request.
+	req := &eth.GetBlockBodiesPacket{
+		RequestId: 55,
+		GetBlockBodiesRequest: eth.GetBlockBodiesRequest{
+			s.chain.blocks[54].Hash(),
+			s.chain.blocks[75].Hash(),
 		},
 	}
-	if err := conn.Write(ethProto, eth.GetReceiptsMsg, req); err != nil {
+	if err := conn.Write(ethProto, eth.GetBlockBodiesMsg, req); err != nil {
 		t.Fatalf("could not write to connection: %v", err)
 	}
 	// Wait for response.
-	resp := new(eth.GetReceiptsPacket)
-	if err := conn.ReadMsg(ethProto, eth.GetReceiptsMsg, &resp); err != nil {
+	resp := new(eth.BlockBodiesPacket)
+	if err := conn.ReadMsg(ethProto, eth.BlockBodiesMsg, &resp); err != nil {
 		t.Fatalf("error reading block bodies msg: %v", err)
 	}
 	if got, want := resp.RequestId, req.RequestId; got != want {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
-	receipts := resp.GetReceiptsRequest
-	if len(receipts) != len(req.GetReceiptsRequest) {
-		t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), len(receipts))
+	bodies := resp.BlockBodiesResponse
+	if len(bodies) != len(req.GetBlockBodiesRequest) {
+		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetBlockBodiesRequest), len(bodies))
 	}
 }
 
