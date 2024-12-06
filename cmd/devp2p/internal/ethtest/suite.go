@@ -374,6 +374,8 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 	}
 }
 
+// Test the get block receipts p2p message works
+// as expected, heavily based on the test for Block Bodies.
 func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	t.Log(`This test sends block receipts requests to the node for known blocks in the test chain.`)
 
@@ -382,12 +384,10 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 		t.Fatalf("dial failed: %v", err)
 	}
 	defer conn.Close()
-	t.Log("BEFORE CONN PEER")
 	if err := conn.peer(s.chain, nil); err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	// Create block bodies request.
-	t.Log("BEFORE BUILDING REQUEST")
 	req := &eth.GetReceiptsPacket{
 		RequestId: 55,
 		GetReceiptsRequest: eth.GetReceiptsRequest{
@@ -397,27 +397,19 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 		},
 	}
 
-	t.Log("BEFORE BUILDING REQUEST")
 	if err := conn.Write(ethProto, eth.GetReceiptsMsg, req); err != nil {
 		t.Fatalf("could not write to connection: %v", err)
 	}
 	// Wait for response.
-	t.Log("BEFORE BUILDING REQUEST")
 	resp := new(eth.ReceiptsPacket)
 	if err := conn.ReadMsg(ethProto, eth.ReceiptsMsg, &resp); err != nil {
 		t.Log(fmt.Sprintf("%+v", *resp))
 		t.Fatalf("error reading receipts msg: %v", err)
 	}
-	t.Log("BEFORE EXPECTING RESPONSE")
 	if got, want := resp.RequestId, req.RequestId; got != want {
 		t.Fatalf("unexpected request id in respond", got, want)
 	}
 	receipts := resp.ReceiptsResponse
-	for _, receipt := range receipts {
-		for _, r := range receipt {
-			fmt.Printf("DECODED RECEIPT: %v\n", r)
-		}
-	}
 	if len(receipts) != len(req.GetReceiptsRequest) {
 		t.Fatalf("wrong bodies in response: expected %d bodies, got %d", len(req.GetReceiptsRequest), len(receipts))
 	}
