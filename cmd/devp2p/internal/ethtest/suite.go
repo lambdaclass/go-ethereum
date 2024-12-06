@@ -18,7 +18,6 @@ package ethtest
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"reflect"
 
@@ -403,7 +402,6 @@ func (s *Suite) TestGetBlockReceipts(t *utesting.T) {
 	// Wait for response.
 	resp := new(eth.ReceiptsPacket)
 	if err := conn.ReadMsg(ethProto, eth.ReceiptsMsg, &resp); err != nil {
-		t.Log(fmt.Sprintf("%+v", *resp))
 		t.Fatalf("error reading receipts msg: %v", err)
 	}
 	if got, want := resp.RequestId, req.RequestId; got != want {
