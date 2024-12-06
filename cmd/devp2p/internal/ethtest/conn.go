@@ -107,7 +107,7 @@ func (c *Conn) Read() (uint64, []byte, error) {
 
 // ReadMsg attempts to read a devp2p message with a specific code.
 func (c *Conn) ReadMsg(proto Proto, code uint64, msg any) error {
-	// c.SetReadDeadline(time.Now().Add(timeout))
+	c.SetReadDeadline(time.Now().Add(timeout))
 	for {
 		got, data, err := c.Read()
 		if err != nil {
