@@ -498,7 +498,6 @@ transaction gets propagated.`)
 		t.Fatalf("failed to send next block: %v", err)
 	}
 	from, nonce := s.chain.GetSender(0)
-	nonce = nonce + 1
 	inner := &types.DynamicFeeTx{
 		ChainID:   s.chain.config.ChainID,
 		Nonce:     nonce,
@@ -528,6 +527,7 @@ does not propagate them. (modified)`)
 	}
 
 	from, nonce := s.chain.GetSender(0)
+	nonce = nonce + 1
 	inner := &types.DynamicFeeTx{
 		ChainID:   s.chain.config.ChainID,
 		Nonce:     nonce,
