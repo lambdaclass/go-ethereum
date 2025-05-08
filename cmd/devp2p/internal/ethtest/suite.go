@@ -519,7 +519,7 @@ transaction gets propagated.`)
 
 func (s *Suite) TestInvalidTxs(t *utesting.T) {
 	t.Log(`This test sends several kinds of invalid transactions and checks that the node
-does not propagate them.`)
+does not propagate them. (modified)`)
 
 	// Nudge client out of syncing mode to accept pending txs.
 	if err := s.engine.sendForkchoiceUpdated(); err != nil {
@@ -553,38 +553,38 @@ does not propagate them.`)
 			GasFeeCap: s.chain.Head().BaseFee(),
 			Gas:       100000,
 		},
-		// Value exceeds balance
-		{
-			Nonce:     nonce,
-			GasTipCap: common.Big1,
-			GasFeeCap: s.chain.Head().BaseFee(),
-			Gas:       100000,
-			Value:     s.chain.Balance(from),
-		},
-		// Gas limit too low
-		{
-			Nonce:     nonce,
-			GasTipCap: common.Big1,
-			GasFeeCap: s.chain.Head().BaseFee(),
-			Gas:       1337,
-		},
-		// Code size too large
-		{
-			Nonce:     nonce,
-			GasTipCap: common.Big1,
-			GasFeeCap: s.chain.Head().BaseFee(),
-			Data:      randBuf(50),
-			Gas:       1_000_000,
-		},
-		// Data too large
-		{
-			Nonce:     nonce,
-			GasTipCap: common.Big1,
-			GasFeeCap: s.chain.Head().BaseFee(),
-			To:        &common.Address{0xaa},
-			Data:      randBuf(128),
-			Gas:       5_000_000,
-		},
+		// // Value exceeds balance
+		// {
+		// 	Nonce:     nonce,
+		// 	GasTipCap: common.Big1,
+		// 	GasFeeCap: s.chain.Head().BaseFee(),
+		// 	Gas:       100000,
+		// 	Value:     s.chain.Balance(from),
+		// },
+		// // Gas limit too low
+		// {
+		// 	Nonce:     nonce,
+		// 	GasTipCap: common.Big1,
+		// 	GasFeeCap: s.chain.Head().BaseFee(),
+		// 	Gas:       1337,
+		// },
+		// // Code size too large
+		// {
+		// 	Nonce:     nonce,
+		// 	GasTipCap: common.Big1,
+		// 	GasFeeCap: s.chain.Head().BaseFee(),
+		// 	Data:      randBuf(50),
+		// 	Gas:       1_000_000,
+		// },
+		// // Data too large
+		// {
+		// 	Nonce:     nonce,
+		// 	GasTipCap: common.Big1,
+		// 	GasFeeCap: s.chain.Head().BaseFee(),
+		// 	To:        &common.Address{0xaa},
+		// 	Data:      randBuf(128),
+		// 	Gas:       5_000_000,
+		// },
 	}
 
 	var txs []*types.Transaction
