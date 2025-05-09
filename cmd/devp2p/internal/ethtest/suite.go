@@ -544,7 +544,7 @@ does not propagate them. (modified)`)
 		t.Fatalf("failed to send txs: %v", err)
 	}
 	s.chain.IncNonce(from, 1)
-
+	t.Logf("Sending TX with nonce: {%v}", nonce-1)
 	inners := []*types.DynamicFeeTx{
 		// Nonce already used
 		{
