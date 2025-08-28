@@ -191,11 +191,7 @@ func (s *StateDB) DumpToCollector(c DumpCollector, conf *DumpConfig) (nextKey []
 					log.Error("Failed to decode the value returned by iterator", "error", err)
 					continue
 				}
-				key := storageTr.GetKey(storageIt.Key)
-				if key == nil {
-					continue
-				}
-				account.Storage[common.BytesToHash(key)] = common.Bytes2Hex(content)
+				account.Storage[common.BytesToHash(storageIt.Key)] = common.Bytes2Hex(content)
 			}
 		}
 		c.OnAccount(address, account)
