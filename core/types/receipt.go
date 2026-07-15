@@ -72,6 +72,12 @@ type Receipt struct {
 	BlockHash        common.Hash `json:"blockHash,omitempty"`
 	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
 	TransactionIndex uint        `json:"transactionIndex"`
+
+	// EIP-8141 frame transaction fields. RPC-JSON only: tagged rlp:"-" so they
+	// never enter the consensus receipt encoding (receiptRLP/storedReceiptRLP),
+	// leaving standard receipts and the receipts root byte-identical.
+	FrameReceipts []*FrameReceipt `json:"frameReceipts,omitempty" rlp:"-"`
+	Payer         *common.Address `json:"payer,omitempty" rlp:"-"`
 }
 
 type receiptMarshaling struct {
