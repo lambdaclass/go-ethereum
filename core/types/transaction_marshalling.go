@@ -49,6 +49,11 @@ type txJSON struct {
 	S                    *hexutil.Big           `json:"s"`
 	YParity              *hexutil.Uint64        `json:"yParity,omitempty"`
 
+	// EIP-8141 frame transaction fields:
+	Sender     *common.Address      `json:"sender,omitempty"`
+	Frames     []frameJSON          `json:"frames,omitempty"`
+	Signatures []frameSignatureJSON `json:"signatures,omitempty"`
+
 	// Blob transaction sidecar encoding:
 	Blobs       []kzg4844.Blob       `json:"blobs,omitempty"`
 	Commitments []kzg4844.Commitment `json:"commitments,omitempty"`
@@ -170,6 +175,19 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		enc.S = (*hexutil.Big)(itx.S.ToBig())
 		yparity := itx.V.Uint64()
 		enc.YParity = (*hexutil.Uint64)(&yparity)
+
+	case *FrameTx:
+		enc.ChainID = (*hexutil.Big)(itx.ChainID)
+		nonce := hexutil.Uint64(itx.Nonce)
+		enc.Nonce = &nonce
+		sender := itx.Sender
+		enc.Sender = &sender
+		enc.MaxFeePerGas = (*hexutil.Big)(itx.GasFeeCap)
+		enc.MaxPriorityFeePerGas = (*hexutil.Big)(itx.GasTipCap)
+		enc.MaxFeePerBlobGas = (*hexutil.Big)(itx.MaxFeePerBlobGas)
+		enc.BlobVersionedHashes = itx.BlobHashes
+		enc.Frames = framesToJSON(itx.Frames)
+		enc.Signatures = signaturesToJSON(itx.Signatures)
 	}
 	return json.Marshal(&enc)
 }
@@ -506,6 +524,37 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 				return err
 			}
 		}
+
+	case FrameTxType:
+		var itx FrameTx
+		inner = &itx
+		if dec.ChainID == nil {
+			return errors.New("missing required field 'chainId' in transaction")
+		}
+		itx.ChainID = (*big.Int)(dec.ChainID)
+		if dec.Nonce == nil {
+			return errors.New("missing required field 'nonce' in transaction")
+		}
+		itx.Nonce = uint64(*dec.Nonce)
+		if dec.Sender == nil {
+			return errors.New("missing required field 'sender' in frame transaction")
+		}
+		itx.Sender = *dec.Sender
+		itx.GasTipCap = new(big.Int)
+		if dec.MaxPriorityFeePerGas != nil {
+			itx.GasTipCap = (*big.Int)(dec.MaxPriorityFeePerGas)
+		}
+		itx.GasFeeCap = new(big.Int)
+		if dec.MaxFeePerGas != nil {
+			itx.GasFeeCap = (*big.Int)(dec.MaxFeePerGas)
+		}
+		itx.MaxFeePerBlobGas = new(big.Int)
+		if dec.MaxFeePerBlobGas != nil {
+			itx.MaxFeePerBlobGas = (*big.Int)(dec.MaxFeePerBlobGas)
+		}
+		itx.BlobHashes = dec.BlobVersionedHashes
+		itx.Frames = framesFromJSON(dec.Frames)
+		itx.Signatures = signaturesFromJSON(dec.Signatures)
 
 	default:
 		return ErrTxTypeNotSupported
