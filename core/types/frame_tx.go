@@ -163,7 +163,15 @@ func (tx *FrameTx) accessList() AccessList { return nil }
 func (tx *FrameTx) gasFeeCap() *big.Int    { return tx.GasFeeCap }
 func (tx *FrameTx) gasTipCap() *big.Int    { return tx.GasTipCap }
 func (tx *FrameTx) gasPrice() *big.Int     { return tx.GasFeeCap }
-func (tx *FrameTx) nonce() uint64          { return tx.Nonce }
+// nonce reports the display nonce: for a Hegotá (EIP-8250) frame tx the account
+// nonce is keyed, so surface NonceSeq (the sequence shared by the keys); the
+// canonical variant uses the scalar Nonce.
+func (tx *FrameTx) nonce() uint64 {
+	if tx.Hegota {
+		return tx.NonceSeq
+	}
+	return tx.Nonce
+}
 
 // data() has no single value for a frame transaction; frames carry their own data.
 func (tx *FrameTx) data() []byte { return nil }

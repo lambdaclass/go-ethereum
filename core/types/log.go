@@ -42,7 +42,7 @@ type Log struct {
 	// block in which the transaction was included
 	BlockNumber uint64 `json:"blockNumber" rlp:"-"`
 	// hash of the transaction
-	TxHash common.Hash `json:"transactionHash" gencodec:"required" rlp:"-"`
+	TxHash common.Hash `json:"transactionHash" rlp:"-"`
 	// index of the transaction in the block
 	TxIndex uint `json:"transactionIndex" rlp:"-"`
 	// hash of the block in which the transaction was included
