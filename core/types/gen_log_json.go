@@ -73,10 +73,12 @@ func (l *Log) UnmarshalJSON(input []byte) error {
 	if dec.BlockNumber != nil {
 		l.BlockNumber = uint64(*dec.BlockNumber)
 	}
-	if dec.TxHash == nil {
-		return errors.New("missing required field 'transactionHash' for Log")
+	// ethrex omits transactionHash on receipt logs (notably for EIP-8141 frame
+	// txs); tolerate its absence rather than failing the whole receipt parse —
+	// this is a read-only explorer that already knows the tx being viewed.
+	if dec.TxHash != nil {
+		l.TxHash = *dec.TxHash
 	}
-	l.TxHash = *dec.TxHash
 	if dec.TxIndex != nil {
 		l.TxIndex = uint(*dec.TxIndex)
 	}
