@@ -54,6 +54,12 @@ type txJSON struct {
 	Frames     []frameJSON          `json:"frames,omitempty"`
 	Signatures []frameSignatureJSON `json:"signatures,omitempty"`
 
+	// Hegotá frame transaction fields: EIP-8250 keyed nonces (in place of the
+	// scalar Nonce above) and EIP-8272 recent-root references.
+	NonceKeys            []*hexutil.Big      `json:"nonceKeys,omitempty"`
+	NonceSeq             *hexutil.Uint64     `json:"nonceSeq,omitempty"`
+	RecentRootReferences []recentRootRefJSON `json:"recentRootReferences,omitempty"`
+
 	// Blob transaction sidecar encoding:
 	Blobs       []kzg4844.Blob       `json:"blobs,omitempty"`
 	Commitments []kzg4844.Commitment `json:"commitments,omitempty"`
@@ -178,8 +184,18 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 	case *FrameTx:
 		enc.ChainID = (*hexutil.Big)(itx.ChainID)
-		nonce := hexutil.Uint64(itx.Nonce)
-		enc.Nonce = &nonce
+		if itx.Hegota {
+			enc.NonceKeys = make([]*hexutil.Big, len(itx.NonceKeys))
+			for i, k := range itx.NonceKeys {
+				enc.NonceKeys[i] = (*hexutil.Big)(k)
+			}
+			seq := hexutil.Uint64(itx.NonceSeq)
+			enc.NonceSeq = &seq
+			enc.RecentRootReferences = recentRootRefsToJSON(itx.RecentRootReferences)
+		} else {
+			nonce := hexutil.Uint64(itx.Nonce)
+			enc.Nonce = &nonce
+		}
 		sender := itx.Sender
 		enc.Sender = &sender
 		enc.MaxFeePerGas = (*hexutil.Big)(itx.GasFeeCap)
@@ -532,10 +548,23 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 			return errors.New("missing required field 'chainId' in transaction")
 		}
 		itx.ChainID = (*big.Int)(dec.ChainID)
-		if dec.Nonce == nil {
-			return errors.New("missing required field 'nonce' in transaction")
+		// Hegotá (EIP-8250) keyed nonces vs canonical (EIP-8141) scalar nonce.
+		if len(dec.NonceKeys) > 0 || dec.NonceSeq != nil {
+			itx.Hegota = true
+			itx.NonceKeys = make([]*big.Int, len(dec.NonceKeys))
+			for i, k := range dec.NonceKeys {
+				itx.NonceKeys[i] = (*big.Int)(k)
+			}
+			if dec.NonceSeq != nil {
+				itx.NonceSeq = uint64(*dec.NonceSeq)
+			}
+			itx.RecentRootReferences = recentRootRefsFromJSON(dec.RecentRootReferences)
+		} else {
+			if dec.Nonce == nil {
+				return errors.New("missing required field 'nonce' in transaction")
+			}
+			itx.Nonce = uint64(*dec.Nonce)
 		}
-		itx.Nonce = uint64(*dec.Nonce)
 		if dec.Sender == nil {
 			return errors.New("missing required field 'sender' in frame transaction")
 		}
