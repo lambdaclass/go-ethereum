@@ -26,7 +26,8 @@ import (
 // Frame is a single execution step of an EIP-8141 frame transaction.
 // The six fields are the canonical tuple [mode, flags, target, gas_limit, value, data].
 //
-//	mode:  0 = DEFAULT, 1 = VERIFY, 2 = SENDER, 3 = POST_TX (EIP-7906)
+//	mode:  0 = DEFAULT, 1 = VERIFY, 2 = SENDER, 3 = POST_TX (EIP-7906),
+//	       5 = UTXO (EIP-8312); 4 and 6-255 are reserved
 //	flags: bit 0 = PAYMENT approval, bit 1 = EXECUTION approval, bit 2 = atomic batch
 //
 // Target is a pointer so contract-creation / "no target" frames encode as the RLP
@@ -41,10 +42,19 @@ type Frame struct {
 }
 
 // FrameSignature is one entry of a frame transaction's outer signature list:
-// [scheme, signer, msg, signature]. Scheme 0 = secp256k1, 1 = P256.
+// [scheme, signer, msg, signature].
+//
+//	scheme: 0 = ARBITRARY, 1 = SECP256K1, 2 = P256
+//
+// Signer is a pointer for the same reason Frame.Target is: it is optional on the
+// wire and encodes as the RLP empty string when absent. Absent is not an edge
+// case -- EIP-8141 resolves it to the transaction sender, so a signature that
+// signs for the sender omits it, and an ARBITRARY signature MUST omit it (it
+// carries no recoverable signer at all). A non-pointer common.Address cannot
+// decode the empty string, which rejects the whole transaction.
 type FrameSignature struct {
 	Scheme    uint8
-	Signer    common.Address
+	Signer    *common.Address `rlp:"nil"`
 	Msg       []byte
 	Signature []byte
 }
@@ -122,7 +132,7 @@ func (tx *FrameTx) copy() TxData {
 	for i, s := range tx.Signatures {
 		cpy.Signatures[i] = FrameSignature{
 			Scheme:    s.Scheme,
-			Signer:    s.Signer,
+			Signer:    copyAddressPtr(s.Signer),
 			Msg:       common.CopyBytes(s.Msg),
 			Signature: common.CopyBytes(s.Signature),
 		}
@@ -388,10 +398,10 @@ type frameJSON struct {
 }
 
 type frameSignatureJSON struct {
-	Scheme    hexutil.Uint64 `json:"scheme"`
-	Signer    common.Address `json:"signer"`
-	Msg       hexutil.Bytes  `json:"msg"`
-	Signature hexutil.Bytes  `json:"signature"`
+	Scheme    hexutil.Uint64  `json:"scheme"`
+	Signer    *common.Address `json:"signer"`
+	Msg       hexutil.Bytes   `json:"msg"`
+	Signature hexutil.Bytes   `json:"signature"`
 }
 
 func framesToJSON(frames []Frame) []frameJSON {

@@ -79,8 +79,10 @@ func TestFrameTxDecodeCanonical(t *testing.T) {
 	if frames[1].Mode != 2 || frames[1].Value.Cmp(big.NewInt(1)) != 0 {
 		t.Fatalf("frame1 = mode %d value %s, want SENDER(2)/1", frames[1].Mode, frames[1].Value)
 	}
-	if sigs := tx.FrameSignatures(); len(sigs) != 1 || sigs[0].Scheme != 0 || sigs[0].Signer != sender {
-		t.Fatalf("signatures = %+v, want one secp256k1 sig from sender", tx.FrameSignatures())
+	// Signer is optional on the wire; this fixture names it, so it must decode to
+	// the address rather than to nil.
+	if sigs := tx.FrameSignatures(); len(sigs) != 1 || sigs[0].Scheme != 0 || sigs[0].Signer == nil || *sigs[0].Signer != sender {
+		t.Fatalf("signatures = %+v, want one sig naming the sender", tx.FrameSignatures())
 	}
 
 	// JSON round-trip (the ethclient path Dora uses via BlockByNumber).
