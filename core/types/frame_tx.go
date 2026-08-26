@@ -519,14 +519,17 @@ type frameJSON struct {
 	Mode  hexutil.Uint64  `json:"mode"`
 	Flags hexutil.Uint64  `json:"flags"`
 	To    *common.Address `json:"to"`
-	// GasLimit is the execution budget under either wire form; StateGasLimit and
-	// Limits describe the EIP-8037 state budget and which form the frame carries,
-	// so a transaction decoded from JSON re-encodes to its original bytes.
-	GasLimit      hexutil.Uint64 `json:"gasLimit"`
-	StateGasLimit hexutil.Uint64 `json:"stateGasLimit"`
-	Limits        bool           `json:"limits"`
-	Value         *hexutil.Big   `json:"value"`
-	Data          hexutil.Bytes  `json:"data"`
+	// The gas fields name the wire form rather than describing it in a flag,
+	// which is what ethrex's RPC does: a frame under the superseded scalar form
+	// reports `gasLimit`, one under `limits = [execution, state]` reports
+	// `executionGasLimit` and `stateGasLimit`. Which pair is present decides how
+	// the frame re-encodes, and a frame has to re-encode as it came in for its
+	// transaction's hash to survive the round trip.
+	GasLimit          *hexutil.Uint64 `json:"gasLimit,omitempty"`
+	ExecutionGasLimit *hexutil.Uint64 `json:"executionGasLimit,omitempty"`
+	StateGasLimit     *hexutil.Uint64 `json:"stateGasLimit,omitempty"`
+	Value             *hexutil.Big    `json:"value"`
+	Data              hexutil.Bytes   `json:"data"`
 }
 
 type frameSignatureJSON struct {
@@ -540,14 +543,18 @@ func framesToJSON(frames []Frame) []frameJSON {
 	out := make([]frameJSON, len(frames))
 	for i, f := range frames {
 		out[i] = frameJSON{
-			Mode:          hexutil.Uint64(f.Mode),
-			Flags:         hexutil.Uint64(f.Flags),
-			To:            f.Target,
-			GasLimit:      hexutil.Uint64(f.GasLimit),
-			StateGasLimit: hexutil.Uint64(f.StateGasLimit),
-			Limits:        f.Limits,
-			Value:         (*hexutil.Big)(f.Value),
-			Data:          f.Data,
+			Mode:  hexutil.Uint64(f.Mode),
+			Flags: hexutil.Uint64(f.Flags),
+			To:    f.Target,
+			Value: (*hexutil.Big)(f.Value),
+			Data:  f.Data,
+		}
+		if f.Limits {
+			execution, state := hexutil.Uint64(f.GasLimit), hexutil.Uint64(f.StateGasLimit)
+			out[i].ExecutionGasLimit, out[i].StateGasLimit = &execution, &state
+		} else {
+			gas := hexutil.Uint64(f.GasLimit)
+			out[i].GasLimit = &gas
 		}
 	}
 	return out
@@ -561,14 +568,24 @@ func framesFromJSON(in []frameJSON) []Frame {
 			v = new(big.Int)
 		}
 		out[i] = Frame{
-			Mode:          uint8(f.Mode),
-			Flags:         uint8(f.Flags),
-			Target:        f.To,
-			GasLimit:      uint64(f.GasLimit),
-			StateGasLimit: uint64(f.StateGasLimit),
-			Limits:        f.Limits,
-			Value:         v,
-			Data:          f.Data,
+			Mode:   uint8(f.Mode),
+			Flags:  uint8(f.Flags),
+			Target: f.To,
+			Value:  v,
+			Data:   f.Data,
+		}
+		// `executionGasLimit` names the two-dimensional form; anything that only
+		// reports `gasLimit` is describing the superseded scalar one.
+		if f.ExecutionGasLimit != nil || f.StateGasLimit != nil {
+			out[i].Limits = true
+			if f.ExecutionGasLimit != nil {
+				out[i].GasLimit = uint64(*f.ExecutionGasLimit)
+			}
+			if f.StateGasLimit != nil {
+				out[i].StateGasLimit = uint64(*f.StateGasLimit)
+			}
+		} else if f.GasLimit != nil {
+			out[i].GasLimit = uint64(*f.GasLimit)
 		}
 	}
 	return out
