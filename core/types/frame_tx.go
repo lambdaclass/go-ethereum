@@ -15,6 +15,7 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -24,7 +25,7 @@ import (
 )
 
 // Frame is a single execution step of an EIP-8141 frame transaction.
-// The six fields are the canonical tuple [mode, flags, target, gas_limit, value, data].
+// The six fields are the canonical tuple [mode, flags, target, gas, value, data].
 //
 //	mode:  0 = DEFAULT, 1 = VERIFY, 2 = SENDER, 3 = POST_TX (EIP-7906),
 //	       5 = UTXO (EIP-8312); 4 and 6-255 are reserved
@@ -32,13 +33,129 @@ import (
 //
 // Target is a pointer so contract-creation / "no target" frames encode as the RLP
 // empty string, matching ethrex's `target_or_empty`.
+//
+// The gas slot has two wire forms. EIP-8141 first declared a scalar `gas_limit`;
+// it now declares `limits = [execution, state]`, where the second dimension pays
+// EIP-8037's charge for state growth. A chain switches forms at an activation
+// timestamp, so the history of a chain that has crossed one holds both — and
+// transaction hashes and the transactions root are derived by re-encoding, so a
+// frame has to go back out in the form it came in. Limits records that form;
+// GasLimit is the execution budget under either, and StateGasLimit is zero under
+// the scalar form.
 type Frame struct {
+	Mode          uint8
+	Flags         uint8
+	Target        *common.Address
+	GasLimit      uint64 // limits.execution, or the scalar gas_limit
+	StateGasLimit uint64 // limits.state; zero under the scalar form
+	Limits        bool   // decoded from, and re-encoded as, [execution, state]
+	Value         *big.Int
+	Data          []byte
+}
+
+// frameScalarRLP and frameLimitsRLP are the frame's two wire shapes. Frame itself
+// carries the form marker and so matches neither tuple; its RLP goes through these.
+type frameScalarRLP struct {
 	Mode     uint8
 	Flags    uint8
 	Target   *common.Address `rlp:"nil"`
 	GasLimit uint64
 	Value    *big.Int
 	Data     []byte
+}
+
+type frameGasLimits struct {
+	Execution uint64
+	State     uint64
+}
+
+type frameLimitsRLP struct {
+	Mode   uint8
+	Flags  uint8
+	Target *common.Address `rlp:"nil"`
+	Limits frameGasLimits
+	Value  *big.Int
+	Data   []byte
+}
+
+// EncodeRLP writes the frame in the form it was decoded from, which is what keeps
+// a pre-activation transaction's hash intact.
+func (f *Frame) EncodeRLP(w io.Writer) error {
+	value := f.Value
+	if value == nil {
+		value = new(big.Int)
+	}
+	if f.Limits {
+		return rlp.Encode(w, &frameLimitsRLP{
+			Mode:   f.Mode,
+			Flags:  f.Flags,
+			Target: f.Target,
+			Limits: frameGasLimits{Execution: f.GasLimit, State: f.StateGasLimit},
+			Value:  value,
+			Data:   f.Data,
+		})
+	}
+	return rlp.Encode(w, &frameScalarRLP{
+		Mode:     f.Mode,
+		Flags:    f.Flags,
+		Target:   f.Target,
+		GasLimit: f.GasLimit,
+		Value:    value,
+		Data:     f.Data,
+	})
+}
+
+// DecodeRLP decodes either form, self-distinguishing by the RLP kind of the gas
+// slot: a list is `limits = [execution, state]`, a string is the scalar
+// `gas_limit`. Both are accepted unconditionally — decoding has no block context,
+// and a node must be able to read history from both sides of the activation — and
+// the form is recorded so re-encoding reproduces the original bytes.
+func (f *Frame) DecodeRLP(s *rlp.Stream) error {
+	if _, err := s.List(); err != nil {
+		return err
+	}
+	if err := s.Decode(&f.Mode); err != nil {
+		return err
+	}
+	if err := s.Decode(&f.Flags); err != nil {
+		return err
+	}
+	target, err := s.Bytes()
+	if err != nil {
+		return err
+	}
+	switch len(target) {
+	case 0:
+		f.Target = nil
+	case common.AddressLength:
+		addr := common.BytesToAddress(target)
+		f.Target = &addr
+	default:
+		return fmt.Errorf("rlp: frame target has %d bytes, want 0 or %d", len(target), common.AddressLength)
+	}
+	kind, _, err := s.Kind()
+	if err != nil {
+		return err
+	}
+	if kind == rlp.List {
+		var limits frameGasLimits
+		if err := s.Decode(&limits); err != nil {
+			return err
+		}
+		f.Limits, f.GasLimit, f.StateGasLimit = true, limits.Execution, limits.State
+	} else {
+		f.Limits, f.StateGasLimit = false, 0
+		if err := s.Decode(&f.GasLimit); err != nil {
+			return err
+		}
+	}
+	if err := s.Decode(&f.Value); err != nil {
+		return err
+	}
+	if err := s.Decode(&f.Data); err != nil {
+		return err
+	}
+	return s.ListEnd()
 }
 
 // FrameSignature is one entry of a frame transaction's outer signature list:
@@ -121,7 +238,14 @@ func (tx *FrameTx) copy() TxData {
 		MaxFeePerBlobGas: new(big.Int),
 	}
 	for i, f := range tx.Frames {
-		nf := Frame{Mode: f.Mode, Flags: f.Flags, GasLimit: f.GasLimit, Value: new(big.Int)}
+		nf := Frame{
+			Mode:          f.Mode,
+			Flags:         f.Flags,
+			GasLimit:      f.GasLimit,
+			StateGasLimit: f.StateGasLimit,
+			Limits:        f.Limits,
+			Value:         new(big.Int),
+		}
 		nf.Target = copyAddressPtr(f.Target)
 		nf.Data = common.CopyBytes(f.Data)
 		if f.Value != nil {
@@ -173,6 +297,7 @@ func (tx *FrameTx) accessList() AccessList { return nil }
 func (tx *FrameTx) gasFeeCap() *big.Int    { return tx.GasFeeCap }
 func (tx *FrameTx) gasTipCap() *big.Int    { return tx.GasTipCap }
 func (tx *FrameTx) gasPrice() *big.Int     { return tx.GasFeeCap }
+
 // nonce reports the display nonce: for a Hegotá (EIP-8250) frame tx the account
 // nonce is keyed, so surface NonceSeq (the sequence shared by the keys); the
 // canonical variant uses the scalar Nonce.
@@ -189,8 +314,10 @@ func (tx *FrameTx) data() []byte { return nil }
 // to() is undefined for a frame transaction (each frame has its own target).
 func (tx *FrameTx) to() *common.Address { return nil }
 
-// gas() returns the summed per-frame gas limits — a display-only approximation of
-// the transaction's total gas (frame transactions have no single gas field).
+// gas() returns the summed per-frame execution limits — a display-only
+// approximation of the transaction's total gas (frame transactions have no single
+// gas field). The EIP-8037 state dimension is a separate budget and is not summed
+// in here; it is exposed per frame as Frame.StateGasLimit.
 func (tx *FrameTx) gas() uint64 {
 	var total uint64
 	for _, f := range tx.Frames {
@@ -389,12 +516,17 @@ func (tx *Transaction) FrameRecentRootReferences() []RecentRootReference {
 // Transaction's Marshal/UnmarshalJSON (the ethclient path).
 
 type frameJSON struct {
-	Mode     hexutil.Uint64  `json:"mode"`
-	Flags    hexutil.Uint64  `json:"flags"`
-	To       *common.Address `json:"to"`
-	GasLimit hexutil.Uint64  `json:"gasLimit"`
-	Value    *hexutil.Big    `json:"value"`
-	Data     hexutil.Bytes   `json:"data"`
+	Mode  hexutil.Uint64  `json:"mode"`
+	Flags hexutil.Uint64  `json:"flags"`
+	To    *common.Address `json:"to"`
+	// GasLimit is the execution budget under either wire form; StateGasLimit and
+	// Limits describe the EIP-8037 state budget and which form the frame carries,
+	// so a transaction decoded from JSON re-encodes to its original bytes.
+	GasLimit      hexutil.Uint64 `json:"gasLimit"`
+	StateGasLimit hexutil.Uint64 `json:"stateGasLimit"`
+	Limits        bool           `json:"limits"`
+	Value         *hexutil.Big   `json:"value"`
+	Data          hexutil.Bytes  `json:"data"`
 }
 
 type frameSignatureJSON struct {
@@ -408,12 +540,14 @@ func framesToJSON(frames []Frame) []frameJSON {
 	out := make([]frameJSON, len(frames))
 	for i, f := range frames {
 		out[i] = frameJSON{
-			Mode:     hexutil.Uint64(f.Mode),
-			Flags:    hexutil.Uint64(f.Flags),
-			To:       f.Target,
-			GasLimit: hexutil.Uint64(f.GasLimit),
-			Value:    (*hexutil.Big)(f.Value),
-			Data:     f.Data,
+			Mode:          hexutil.Uint64(f.Mode),
+			Flags:         hexutil.Uint64(f.Flags),
+			To:            f.Target,
+			GasLimit:      hexutil.Uint64(f.GasLimit),
+			StateGasLimit: hexutil.Uint64(f.StateGasLimit),
+			Limits:        f.Limits,
+			Value:         (*hexutil.Big)(f.Value),
+			Data:          f.Data,
 		}
 	}
 	return out
@@ -427,12 +561,14 @@ func framesFromJSON(in []frameJSON) []Frame {
 			v = new(big.Int)
 		}
 		out[i] = Frame{
-			Mode:     uint8(f.Mode),
-			Flags:    uint8(f.Flags),
-			Target:   f.To,
-			GasLimit: uint64(f.GasLimit),
-			Value:    v,
-			Data:     f.Data,
+			Mode:          uint8(f.Mode),
+			Flags:         uint8(f.Flags),
+			Target:        f.To,
+			GasLimit:      uint64(f.GasLimit),
+			StateGasLimit: uint64(f.StateGasLimit),
+			Limits:        f.Limits,
+			Value:         v,
+			Data:          f.Data,
 		}
 	}
 	return out
