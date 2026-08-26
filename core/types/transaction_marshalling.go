@@ -209,7 +209,46 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON unmarshals from JSON.
+// isFrameTxJSON reports whether a JSON transaction object declares type 0x06.
+// A body without a readable type is left to the main decoder to reject.
+func isFrameTxJSON(input []byte) bool {
+	var probe struct {
+		Type *hexutil.Uint64 `json:"type"`
+	}
+	if err := json.Unmarshal(input, &probe); err != nil || probe.Type == nil {
+		return false
+	}
+	return uint64(*probe.Type) == FrameTxType
+}
+
+// withoutSignatureFields returns the JSON object with the ECDSA signature fields
+// removed.
+func withoutSignatureFields(input []byte) ([]byte, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(input, &fields); err != nil {
+		return nil, err
+	}
+	for _, name := range []string{"v", "r", "s", "yParity"} {
+		delete(fields, name)
+	}
+	return json.Marshal(fields)
+}
+
 func (tx *Transaction) UnmarshalJSON(input []byte) error {
+	// A frame transaction (type 0x06) carries no ECDSA signature over the
+	// transaction: its sender is explicit and the frames carry their own
+	// signatures. Nodes still report v/r/s for it, and ethrex reports them as
+	// zero-padded 32-byte words, which hexutil.Big rejects as non-minimal hex —
+	// so the transaction would fail to decode on three fields the frame path
+	// never reads. Drop them for that type alone, rather than making every other
+	// transaction type tolerant of padded hex.
+	if isFrameTxJSON(input) {
+		stripped, err := withoutSignatureFields(input)
+		if err != nil {
+			return err
+		}
+		input = stripped
+	}
 	var dec txJSON
 	err := json.Unmarshal(input, &dec)
 	if err != nil {

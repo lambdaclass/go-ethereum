@@ -16,6 +16,7 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -120,5 +121,108 @@ func TestFrameTxLimitsRealTransaction(t *testing.T) {
 	}
 	if !bytes.Equal(back, raw) {
 		t.Errorf("re-encoded to %x, want %x", back, raw)
+	}
+}
+
+// hegotaLimitsJSON is the eth_getTransactionByHash body ethrex returns for
+// hegotaLimitsRawTx. ethrex names a frame's two budgets executionGasLimit and
+// stateGasLimit and sends no separate marker for the wire form, so this fixture
+// pins both the naming and the requirement that a transaction rebuilt from JSON
+// still hashes to what the chain says.
+const hegotaLimitsJSON = `{
+  "blobVersionedHashes": [],
+  "chainId": "0x301824",
+  "frames": [
+    {
+      "data": "0x",
+      "executionGasLimit": "0x186a0",
+      "flags": "0x3",
+      "mode": "0x1",
+      "stateGasLimit": "0x7a120",
+      "to": "0xea4e13a1107b002aa7547df6681b80ecc191b13e",
+      "value": "0x0"
+    },
+    {
+      "data": "0x",
+      "executionGasLimit": "0x186a0",
+      "flags": "0x0",
+      "mode": "0x2",
+      "stateGasLimit": "0x7a120",
+      "to": "0xa5208a807db219b640ba2a77a2719e5a0a43d024",
+      "value": "0xe8d4a51000"
+    }
+  ],
+  "from": "0xea4e13a1107b002aa7547df6681b80ecc191b13e",
+  "gas": "0x12a9de",
+  "hash": "0x759f6fe556eea6c50150f6e405ee10afce4aaaf16f1aa7ab770facc71dd41faf",
+  "input": "0x",
+  "maxFeePerBlobGas": "0x0",
+  "maxFeePerGas": "0x2540be400",
+  "maxPriorityFeePerGas": "0x3b9aca00",
+  "nonce": "0x1",
+  "nonceKeys": [
+    "0x0"
+  ],
+  "nonceSeq": "0x1",
+  "r": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "recentRootReferences": [],
+  "s": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "sender": "0xea4e13a1107b002aa7547df6681b80ecc191b13e",
+  "signatures": [
+    {
+      "msg": "0x",
+      "scheme": "0x1",
+      "signature": "0x00ee36949779bbf1fa62b182307b74dfa7795f356980e06d502a99f44f07d4453704abf269afe11fbc9b8c2a68a21f5e6282c812d923858dc6d92b85a7640d140e",
+      "signer": "0xea4e13a1107b002aa7547df6681b80ecc191b13e"
+    }
+  ],
+  "to": null,
+  "type": "0x6",
+  "v": "0x0",
+  "value": "0x0",
+  "yParity": "0x0"
+}`
+
+func TestFrameTxLimitsFromNodeJSON(t *testing.T) {
+	var tx Transaction
+	if err := json.Unmarshal([]byte(hegotaLimitsJSON), &tx); err != nil {
+		t.Fatalf("decode json: %v", err)
+	}
+	if got := tx.Hash(); got != common.HexToHash(hegotaLimitsTxHash) {
+		t.Fatalf("hash = %s, want %s", got.Hex(), hegotaLimitsTxHash)
+	}
+	for i, f := range tx.Frames() {
+		if !f.Limits {
+			t.Errorf("frame %d: Limits = false, want true", i)
+		}
+		if f.GasLimit != 0x186a0 || f.StateGasLimit != 0x7a120 {
+			t.Errorf("frame %d: budgets = (%d, %d), want (%d, %d)",
+				i, f.GasLimit, f.StateGasLimit, 0x186a0, 0x7a120)
+		}
+	}
+	want, err := hex.DecodeString(hegotaLimitsRawTx)
+	if err != nil {
+		t.Fatalf("bad test vector: %v", err)
+	}
+	got, err := tx.MarshalBinary()
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("re-encoded to %x, want %x", got, want)
+	}
+
+	// The JSON this package emits has to decode back to the same transaction, or
+	// a consumer that stores and reloads it loses the wire form.
+	out, err := json.Marshal(&tx)
+	if err != nil {
+		t.Fatalf("marshal json: %v", err)
+	}
+	var again Transaction
+	if err := json.Unmarshal(out, &again); err != nil {
+		t.Fatalf("decode our own json: %v", err)
+	}
+	if again.Hash() != tx.Hash() {
+		t.Errorf("round trip through our json changed the hash: %s -> %s", tx.Hash().Hex(), again.Hash().Hex())
 	}
 }
